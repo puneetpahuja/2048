@@ -3,7 +3,6 @@
   (:require [clojure.string :as str]
             [clojure.tools.trace :as trace]))
 
-;; add an value only if new state is different than old state
 ;; loss if states from all direction moves give the same state
 
 
@@ -18,7 +17,9 @@
   (let [empty-locations (find-empty-locations game)
         location-to-fill (rand-nth empty-locations)
         new-value (rand-nth new-values)
-        new-board (assoc-in board location-to-fill new-value)]
+        new-board (if (empty? empty-locations)
+                    board
+                    (assoc-in board location-to-fill new-value))]
     (assoc game :board new-board)))
 
 (defn get-start-game [{:keys [size empty-value winning-value] :as game}]
@@ -75,20 +76,32 @@
                rotate-180)
     game))
 
+(defn get-status [{:keys [board winning-value] :as game}]
+  (let [max-num (->> board flatten (apply max))]
+    (cond
+      (>= max-num winning-value) :won
+      (apply = (conj (map #(move game %) [:up :down :left :right])
+                     game)) :lost
+      :else :none)))
+
 (defn play-game [game]
   (->> game :board (str/join "\n") println)
-  (let [dir (-> (read-line) first)
-        new-game (move game (get {\u :up
-                                  \d :down
-                                  \r :right
-                                  \l :left} dir :none))
-        new-game-2 (if (= (:board game) (:board new-game))
-                     new-game
-                     (add-value new-game))]
-    (play-game new-game-2)))
+  (let [status (get-status game)]
+    (case status
+      :won (println "You won!")
+      :lost (println "You lost.")
+      (let [dir (read-line)
+            new-game (move game (get {"u" :up
+                                      "d" :down
+                                      "r" :right
+                                      "l" :left} dir :none))
+            new-game-2 (if (= (:board game) (:board new-game))
+                         new-game
+                         (add-value new-game))] (play-game new-game-2)))))
 
 (defn -main
   []
+  (println "Controls\n--------\n u: up\n d: down\n r: right\n l: left\n")
   (play-game (get-start-game {:size 4
                               :empty-value 0
                               :winning-value 2048
