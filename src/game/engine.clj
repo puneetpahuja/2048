@@ -1,11 +1,6 @@
 (ns game.engine
   (:gen-class)
-  (:require [clojure.string :as str]
-            [clojure.tools.trace :as trace]))
-
-;; loss if states from all direction moves give the same state
-
-
+  (:require [game.view :as view]))
 
 (defn find-empty-locations [{:keys [board empty-value size]}]
   (for [row (range size)
@@ -36,7 +31,6 @@
     (= fst snd) (concat [(* 2 fst)] (merge-values rst))
     :else (concat [fst] (merge-values (rest values)))))
 
-; merging on the left movement
 (defn move-left [row {:keys [size empty-value]}]
   (let [non-empty-values (remove #(= empty-value %) row)
         merged-values (merge-values non-empty-values)]
@@ -85,7 +79,7 @@
       :else :none)))
 
 (defn play-game [game]
-  (->> game :board (str/join "\n") println)
+  (->> game view/format-board println)
   (let [status (get-status game)]
     (case status
       :won (println "You won!")
